@@ -1,0 +1,50 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+  dbUserName:
+    Type: String
+  dbUserPassword:
+    Type: String
+  dbPort:
+    Type: String
+    Default: '5432'
+  dbAllocatedStorage:
+    Type: String
+    Default: '20'
+  dbBackupRetentionPeriod:
+    Type: Number
+    Default: "30"
+  dbInstanceClass:
+    Type: String
+    Default: 'db.t3.micro'
+
+Resources:
+  DBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: VPC Security Group for ${AWS::StackName} DB
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '5432'
+          ToPort: '5432'
+          CidrIp: 0.0.0.0/0
+
+  DBInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceIdentifier: !Sub '${AWS::StackName}-DB'
+      DBInstanceClass: !Ref dbInstanceClass
+      Engine: postgres
+      MasterUsername: !Ref dbUserName
+      MasterUserPassword: !Ref dbUserPassword
+      Port: !Ref dbPort
+      VPCSecurityGroups:
+        - !GetAtt DBSecurityGroup.GroupId
+      AllocatedStorage: !Ref dbAllocatedStorage
+      BackupRetentionPeriod: !Ref dbBackupRetentionPeriod
+      PreferredBackupWindow: '03:00-04:00'
+
+Outputs:
+  DBEndpoint:
+    Description: Endpoint for connecting to the PostgreSQL DB
+    Value: !GetAtt DBInstance.Endpoint.Address
